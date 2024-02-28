@@ -1,19 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ogrenci_app_flutter/repository/ogretmenler_repository.dart';
 
-class OgretmenlerSayfasi extends StatefulWidget {
-  final OgretmenlerRepository ogretmenlerRepository;
+import 'model/ogretmen.dart';
 
-   OgretmenlerSayfasi( this.ogretmenlerRepository, {super.key});
+class OgretmenlerSayfasi extends ConsumerWidget {
+
+   OgretmenlerSayfasi( {super.key});
+
 
   @override
-  State<OgretmenlerSayfasi> createState() => _OgretmenlerSayfasiState();
-}
+  Widget build(BuildContext context,WidgetRef ref) {
 
-class _OgretmenlerSayfasiState extends State<OgretmenlerSayfasi> {
-  @override
-  Widget build(BuildContext context) {
+    final ogretmenlerRepository = ref.watch(ogretmenlerProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text("Ögretmenler"),
       ),
@@ -22,22 +23,37 @@ class _OgretmenlerSayfasiState extends State<OgretmenlerSayfasi> {
            PhysicalModel(
             color: Colors.white,
             elevation: 10,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 32.0),
-                child: Text(
+            child: Stack(
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 32.0),
+                    child: Text(
 
-                    "${widget.ogretmenlerRepository.ogretmenler.length} Öğretmen"
+                        "${ogretmenlerRepository.ogretmenler.length} Öğretmen"
+                    ),
+                  ),
                 ),
-              ),
+
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OgretmenIndirmeButon(),
+                ),
+
+              ],
             ),
+
+
+
+
           ),
           Expanded(
             child: ListView.separated(
-              itemBuilder: (context, index) => OgretmenSatiri(widget.ogretmenlerRepository.ogretmenler[index],
-                widget.ogretmenlerRepository,),
+              itemBuilder: (context, index) => OgretmenSatiri(ogretmenlerRepository.ogretmenler[index],
+              ),
               separatorBuilder: (context, index) => const Divider(),
-              itemCount: widget.ogretmenlerRepository.ogretmenler.length,
+              itemCount: ogretmenlerRepository.ogretmenler.length,
             ),
           ),
         ],
@@ -46,23 +62,56 @@ class _OgretmenlerSayfasiState extends State<OgretmenlerSayfasi> {
   }
 }
 
-class OgretmenSatiri extends StatefulWidget {
-  Ogretmen ogretmen;
-  OgretmenlerRepository ogretmenlerRepository;
- OgretmenSatiri(this.ogretmen, this.ogretmenlerRepository, {
+class OgretmenIndirmeButon extends StatefulWidget {
+  const OgretmenIndirmeButon({
     super.key,
   });
 
   @override
-  State<OgretmenSatiri> createState() => _OgretmenSatiriState();
+  State<OgretmenIndirmeButon> createState() => _OgretmenIndirmeButonState();
 }
 
-class _OgretmenSatiriState extends State<OgretmenSatiri> {
+class _OgretmenIndirmeButonState extends State<OgretmenIndirmeButon> {
+
+  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
+    return Consumer(
+      builder:(context, ref, child) {
+        return isLoading? CircularProgressIndicator(): IconButton(
+          icon:  Icon(Icons.download),
+          onPressed: () async {
+
+            try {
+              setState(() {
+                isLoading = true;
+              });
+              await ref.read(ogretmenlerProvider).download();
+            }finally{
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+        );
+      }
+    );
+  }
+}
+
+class OgretmenSatiri extends ConsumerWidget {
+  Ogretmen ogretmen;
+
+ OgretmenSatiri(this.ogretmen ,{
+    super.key,
+  });
+
+
+  @override
+  Widget build(BuildContext context,WidgetRef ref) {
     return  ListTile(
-      title: Text(widget.ogretmen.ad + ' ' + widget.ogretmen.soyad),
-      leading: IntrinsicWidth(child: Center(child: Text(widget.ogretmen.cinsiyet == 'Kadın' ? '👩‍🦰' : '👨‍🦰'))), //👨‍🦰
+      title: Text(ogretmen.ad + ' ' + ogretmen.soyad),
+      leading: IntrinsicWidth(child: Center(child: Text(ogretmen.cinsiyet == 'Kadın' ? '👩‍🦰' : '👨‍🦰'))), //👨‍🦰
     );
   }
 }

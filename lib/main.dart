@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ogrenci_app_flutter/mesajlar_sayfasi.dart';
 import 'package:ogrenci_app_flutter/ogrenciler_sayfasi.dart';
 import 'package:ogrenci_app_flutter/ogretmenler_sayfasi.dart';
@@ -7,7 +9,7 @@ import 'package:ogrenci_app_flutter/repository/ogrenciler_repository.dart';
 import 'package:ogrenci_app_flutter/repository/ogretmenler_repository.dart';
 
 void main() {
-  runApp(const OgrenciApp());
+  runApp(const ProviderScope(child: OgrenciApp()));
 }
 
 class OgrenciApp extends StatelessWidget {
@@ -21,30 +23,63 @@ class OgrenciApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const AnaSayfa(title: "Ogrenci Sayfa"),
+      home: const SplashScreen(),
     );
   }
 }
 
-class AnaSayfa extends StatefulWidget {
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initializeFirebase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return  Scaffold(body: const Center(child: CircularProgressIndicator() ,));
+  }
+
+  Future<void> initializeFirebase() async {
+    await Firebase.initializeApp();
+    anasayfayaGit();
+  }
+
+  void anasayfayaGit() {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => const AnaSayfa(title: "Ogrenci Sayfa"),));
+  }
+}
+
+
+
+
+
+
+class AnaSayfa extends ConsumerWidget {
   const AnaSayfa({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
-  @override
-  State<AnaSayfa> createState() => _AnaSayfaState();
-}
 
-class _AnaSayfaState extends State<AnaSayfa> {
-  MesajlarRepository mesajlarRepository = MesajlarRepository();
-  OgrencilerRepository ogrencilerRepository = OgrencilerRepository();
-  OgretmenlerRepository ogretmenlerRepository = OgretmenlerRepository();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ogrencilerRepository = ref.watch(ogrencilerProvider);
+    var ogretmenlerRepository = ref.watch(ogretmenlerProvider);
+    var mesajlarRepository = ref.watch(mesajlarProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(title),
       ),
       body: Center(
         child: Column(
@@ -107,22 +142,23 @@ class _AnaSayfaState extends State<AnaSayfa> {
 
   void _ogrencilereGit(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return OgrencilerSayfasi(ogrencilerRepository);
+      return OgrencilerSayfasi();
     },));
   }
 
   void _ogretmenlereGit(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return OgretmenlerSayfasi(ogretmenlerRepository);
+      return OgretmenlerSayfasi();
     },));
   }
 
   Future<void> _mesajlaraGit(BuildContext context) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return Mesajlar(mesajlarRepository);
+      return Mesajlar();
     },));
-    setState(() {
-    });
+
   }
+
+
 
 }
